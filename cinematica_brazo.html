@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinemática de brazo planar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #fbfaf6;
+    --grid: #cddced;
+    --ink: #1f3a5f;
+    --ink-soft: #4b5d78;
+    --accent: #c97b2e;
+    --accent-soft: #f3e0c8;
+    --line: #a9bfd6;
+    --good: #2b6e63;
+    --card: #ffffff;
+    --shadow: rgba(31,58,95,0.10);
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --paper: #10161f;
+      --grid: #1d2836;
+      --ink: #e8eef7;
+      --ink-soft: #a9bccf;
+      --accent: #e39a52;
+      --accent-soft: #3a3020;
+      --line: #2c3c50;
+      --good: #6fbfae;
+      --card: #16202c;
+      --shadow: rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10161f;
+    --grid: #1d2836;
+    --ink: #e8eef7;
+    --ink-soft: #a9bccf;
+    --accent: #e39a52;
+    --accent-soft: #3a3020;
+    --line: #2c3c50;
+    --good: #6fbfae;
+    --card: #16202c;
+    --shadow: rgba(0,0,0,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/28px 28px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .sheet{
+    max-width:760px;
+    margin:0 auto;
+  }
+  header{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  h1{
+    font-size:1.5rem;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:0.92rem;
+    max-width:56ch;
+    line-height:1.5;
+  }
+
+  section{margin-bottom:28px;}
+  h2{
+    font-size:0.95rem;
+    font-weight:600;
+    margin:0 0 12px;
+    color:var(--ink);
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  h2 .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:1px 6px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:0 2px 10px var(--shadow);
+    padding:18px;
+  }
+
+  .n-control{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+    font-size:0.9rem;
+  }
+  .n-control button{
+    width:30px;height:30px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink);
+    font-size:1.1rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  .n-control button:hover{border-color:var(--accent); color:var(--accent);}
+  .n-control span.count{
+    font-family:'IBM Plex Mono', monospace;
+    min-width:1.4em;
+    text-align:center;
+  }
+
+  table.inputs{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.9rem;
+  }
+  table.inputs th{
+    text-align:left;
+    font-weight:500;
+    color:var(--ink-soft);
+    font-size:0.78rem;
+    padding:4px 8px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  table.inputs td{
+    padding:6px 8px;
+    border-bottom:1px solid var(--grid);
+  }
+  table.inputs td.label{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  table.inputs input{
+    width:100%;
+    padding:7px 8px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.92rem;
+  }
+  table.inputs input:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .unit{
+    color:var(--ink-soft);
+    font-size:0.8rem;
+  }
+
+  .solve-btn{
+    margin-top:16px;
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    cursor:pointer;
+  }
+  .solve-btn:hover{background:var(--accent);}
+
+  .step{
+    margin-bottom:20px;
+  }
+  .step-title{
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+    display:flex;
+    gap:8px;
+    align-items:baseline;
+  }
+  .step-num{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--accent);
+    font-weight:600;
+  }
+
+  .matrix-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.86rem;
+  }
+  .matrix{
+    display:inline-flex;
+    align-items:stretch;
+    border-left:2px solid var(--ink);
+    border-right:2px solid var(--ink);
+    padding:2px 10px;
+  }
+  .matrix table{border-collapse:collapse;}
+  .matrix td{
+    padding:3px 9px;
+    text-align:right;
+    color:var(--ink);
+    min-width:2.6em;
+  }
+  .op{
+    font-size:1.1rem;
+    color:var(--ink-soft);
+    padding:0 2px;
+  }
+
+  .result-box{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:6px;
+  }
+  .result-box .pill{
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    color:var(--ink);
+    border-radius:8px;
+    padding:10px 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.95rem;
+  }
+  .result-box .pill b{color:var(--accent);}
+
+  svg#arm{
+    width:100%;
+    height:auto;
+    display:block;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+
+  .hint{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-top:10px;
+    line-height:1.5;
+  }
+
+  #results{display:none;}
+  @media (max-width:480px){
+    h1{font-size:1.25rem;}
+    .matrix td{padding:3px 6px; min-width:2.2em; font-size:0.8rem;}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <h1>Cinemática directa — brazo planar de N eslabones</h1>
+    <p>Ingresa la longitud y el ángulo de cada eslabón y obtén la posición final del efector, con cada matriz de transformación homogénea y cada producto intermedio mostrado paso a paso.</p>
+  </header>
+
+  <section class="card">
+    <h2><span class="tag">datos</span>Eslabones</h2>
+    <div class="n-control">
+      <span>Grados de libertad:</span>
+      <button id="minus" type="button" aria-label="Quitar eslabón">−</button>
+      <span class="count" id="count">3</span>
+      <button id="plus" type="button" aria-label="Agregar eslabón">+</button>
+    </div>
+    <table class="inputs">
+      <thead>
+        <tr><th>Eslabón</th><th>Longitud L <span class="unit">(cm)</span></th><th>Ángulo θ <span class="unit">(grados)</span></th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <button class="solve-btn" id="solve">Calcular posición final</button>
+    <p class="hint">Convención: cada eslabón i rota θ<sub>i</sub> respecto al eslabón anterior y se traslada L<sub>i</sub> a lo largo de su propio eje x. La transformación total es T = T₁·T₂·…·Tₙ, y la posición final es la última columna de T.</p>
+  </section>
+
+  <div id="results">
+    <section class="card">
+      <h2><span class="tag">paso 1</span>Matriz de cada eslabón</h2>
+      <div id="tSteps"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">paso 2</span>Producto de transformaciones</h2>
+      <div id="productSteps"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">paso 3</span>Posición final</h2>
+      <div id="finalStep"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="tag">paso 4</span>Diagrama del brazo</h2>
+      <svg id="arm" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg>
+      <p class="hint">Vista en el plano XY. Cada punto marca una articulación; el último punto es el efector final.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  const rowsBody = document.getElementById('rows');
+  const countEl = document.getElementById('count');
+  let n = 3;
+  const defaults = [
+    {L:5, th:30},
+    {L:4, th:60},
+    {L:2, th:90},
+  ];
+
+  function buildRows(){
+    rowsBody.innerHTML = '';
+    for(let i=0;i<n;i++){
+      const d = defaults[i] || {L:1, th:0};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="label">L${i+1}, θ${i+1}</td>
+        <td><input type="number" step="any" id="L${i}" value="${d.L}"></td>
+        <td><input type="number" step="any" id="TH${i}" value="${d.th}"></td>
+      `;
+      rowsBody.appendChild(tr);
+    }
+    countEl.textContent = n;
+  }
+
+  document.getElementById('plus').addEventListener('click', ()=>{
+    if(n>=6) return;
+    // preserve current values before resizing
+    saveCurrentAsDefaults();
+    n++;
+    buildRows();
+  });
+  document.getElementById('minus').addEventListener('click', ()=>{
+    if(n<=1) return;
+    saveCurrentAsDefaults();
+    n--;
+    buildRows();
+  });
+
+  function saveCurrentAsDefaults(){
+    for(let i=0;i<n;i++){
+      const Lel = document.getElementById('L'+i);
+      const THel = document.getElementById('TH'+i);
+      if(Lel && THel){
+        defaults[i] = {L: parseFloat(Lel.value)||0, th: parseFloat(THel.value)||0};
+      }
+    }
+  }
+
+  // try to restore a previous session's inputs (per-viewer convenience only)
+  function restore(){
+    try{
+      const saved = localStorage.getItem('brazo-plano-inputs');
+      if(saved){
+        const data = JSON.parse(saved);
+        if(Array.isArray(data.links) && data.links.length){
+          n = Math.min(6, Math.max(1, data.links.length));
+          data.links.forEach((d,i)=>{ defaults[i] = d; });
+        }
+      }
+    }catch(e){ /* ignore, start fresh */ }
+  }
+  restore();
+  buildRows();
+
+  function fmt(x){
+    if(Math.abs(x) < 1e-9) x = 0;
+    return x.toFixed(2);
+  }
+
+  function linkMatrix(L, thDeg){
+    const t = thDeg * Math.PI/180;
+    const c = Math.cos(t), s = Math.sin(t);
+    return [
+      [c, -s, 0, L*c],
+      [s,  c, 0, L*s],
+      [0,  0, 1, 0],
+      [0,  0, 0, 1]
+    ];
+  }
+
+  function multiply(A,B){
+    const C = Array.from({length:4},()=>Array(4).fill(0));
+    for(let i=0;i<4;i++) for(let j=0;j<4;j++){
+      let sum=0;
+      for(let k=0;k<4;k++) sum += A[i][k]*B[k][j];
+      C[i][j]=sum;
+    }
+    return C;
+  }
+
+  function matrixHTML(M){
+    let rowsHtml = '';
+    for(let i=0;i<4;i++){
+      rowsHtml += '<tr>' + M[i].map(v=>`<td>${fmt(v)}</td>`).join('') + '</tr>';
+    }
+    return `<div class="matrix"><table>${rowsHtml}</table></div>`;
+  }
+
+  function solve(){
+    saveCurrentAsDefaults();
+    const links = [];
+    for(let i=0;i<n;i++){
+      links.push({L: parseFloat(document.getElementById('L'+i).value)||0,
+                   th: parseFloat(document.getElementById('TH'+i).value)||0});
+    }
+
+    try{
+      localStorage.setItem('brazo-plano-inputs', JSON.stringify({links}));
+    }catch(e){ /* storage unavailable, continue without saving */ }
+
+    // Step 1: individual matrices
+    const mats = links.map(l => linkMatrix(l.L, l.th));
+    const tStepsEl = document.getElementById('tSteps');
+    tStepsEl.innerHTML = '';
+    mats.forEach((M,i)=>{
+      const div = document.createElement('div');
+      div.className = 'step';
+      div.innerHTML = `
+        <div class="step-title"><span class="step-num">T${i+1}</span>
+          L${i+1} = ${links[i].L} cm, θ${i+1} = ${links[i].th}°</div>
+        <div class="matrix-row">${matrixHTML(M)}</div>`;
+      tStepsEl.appendChild(div);
+    });
+
+    // Step 2: cumulative products
+    const productSteps = document.getElementById('productSteps');
+    productSteps.innerHTML = '';
+    let acc = mats[0];
+    {
+      const div = document.createElement('div');
+      div.className = 'step';
+      div.innerHTML = `<div class="step-title"><span class="step-num">T</span> = T1</div>
+        <div class="matrix-row">${matrixHTML(acc)}</div>`;
+      productSteps.appendChild(div);
+    }
+    for(let i=1;i<mats.length;i++){
+      acc = multiply(acc, mats[i]);
+      const div = document.createElement('div');
+      div.className = 'step';
+      const label = 'T' + Array.from({length:i+1},(_,k)=>k+1).join('·T');
+      div.innerHTML = `
+        <div class="step-title"><span class="step-num">T</span> = ${label}</div>
+        <div class="matrix-row">${matrixHTML(acc)}</div>`;
+      productSteps.appendChild(div);
+    }
+
+    // Step 3: final position
+    const x = acc[0][3], y = acc[1][3], z = acc[2][3];
+    document.getElementById('finalStep').innerHTML = `
+      <div class="matrix-row" style="margin-bottom:14px;">${matrixHTML(acc)}</div>
+      <div class="result-box">
+        <div class="pill">x = <b>${fmt(x)}</b> cm</div>
+        <div class="pill">y = <b>${fmt(y)}</b> cm</div>
+        <div class="pill">z = <b>${fmt(z)}</b> cm</div>
+      </div>`;
+
+    // Step 4: diagram
+    drawArm(links);
+
+    document.getElementById('results').style.display = 'block';
+  }
+
+  function drawArm(links){
+    // cumulative joint positions in the XY plane
+    let x=0, y=0, phi=0;
+    const pts = [{x:0,y:0}];
+    links.forEach(l=>{
+      phi += l.th * Math.PI/180;
+      x += l.L * Math.cos(phi);
+      y += l.L * Math.sin(phi);
+      pts.push({x,y});
+    });
+
+    const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+    const minX = Math.min(0,...xs), maxX = Math.max(0,...xs);
+    const minY = Math.min(0,...ys), maxY = Math.max(0,...ys);
+    const spanX = Math.max(1, maxX-minX), spanY = Math.max(1, maxY-minY);
+    const pad = Math.max(spanX,spanY) * 0.25 + 1;
+
+    const vbW = spanX + pad*2, vbH = spanY + pad*2;
+    const vbX = minX - pad, vbY = -(maxY + pad); // flip y for screen coords
+
+    const svg = document.getElementById('arm');
+    svg.setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
+    svg.innerHTML = '';
+
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1f3a5f';
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#c97b2e';
+    const grid = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() || '#cddced';
+
+    const ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs){
+      const e = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));
+      return e;
+    }
+
+    const strokeW = Math.max(spanX,spanY,1) * 0.01;
+
+    // axes
+    const axisX = el('line',{x1:vbX, y1:0, x2:vbX+vbW, y2:0, stroke:grid, 'stroke-width':strokeW});
+    const axisY = el('line',{x1:0, y1:vbY, x2:0, y2:vbY+vbH, stroke:grid, 'stroke-width':strokeW});
+    svg.appendChild(axisX); svg.appendChild(axisY);
+
+    // links (flip y -> -y for screen space)
+    for(let i=0;i<pts.length-1;i++){
+      const a = pts[i], b = pts[i+1];
+      svg.appendChild(el('line',{x1:a.x,y1:-a.y,x2:b.x,y2:-b.y,stroke:ink,'stroke-width':strokeW*2,'stroke-linecap':'round'}));
+    }
+    // joints
+    pts.forEach((p,i)=>{
+      const isLast = i===pts.length-1;
+      svg.appendChild(el('circle',{cx:p.x,cy:-p.y,r:strokeW*3, fill: isLast?accent:ink}));
+      const label = el('text',{x:p.x + strokeW*4, y:-p.y - strokeW*4, 'font-size':spanX*0.045+spanY*0.02+ (Math.max(spanX,spanY)*0.05), fill: ink, 'font-family':'IBM Plex Mono, monospace'});
+      label.textContent = isLast ? `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})` : `P${i}`;
+      svg.appendChild(label);
+    });
+  }
+
+  document.getElementById('solve').addEventListener('click', solve);
+})();
+</script>
+</body>
+</html>
